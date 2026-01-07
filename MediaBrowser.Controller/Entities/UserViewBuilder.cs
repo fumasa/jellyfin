@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using Jellyfin.Data;
 using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
@@ -28,20 +29,20 @@ namespace MediaBrowser.Controller.Entities
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger<BaseItem> _logger;
         private readonly IUserDataManager _userDataManager;
-        private readonly ITVSeriesManager _tvSeriesManager;
+        private readonly INextUpService _nextUpService;
 
         public UserViewBuilder(
             IUserViewManager userViewManager,
             ILibraryManager libraryManager,
             ILogger<BaseItem> logger,
             IUserDataManager userDataManager,
-            ITVSeriesManager tvSeriesManager)
+            INextUpService nextUpService)
         {
             _userViewManager = userViewManager;
             _libraryManager = libraryManager;
             _logger = logger;
             _userDataManager = userDataManager;
-            _tvSeriesManager = tvSeriesManager;
+            _nextUpService = nextUpService;
         }
 
         public QueryResult<BaseItem> GetUserItems(Folder queryParent, Folder displayParent, CollectionType? viewType, InternalItemsQuery query)
@@ -334,15 +335,16 @@ namespace MediaBrowser.Controller.Entities
         {
             var parentFolders = GetMediaFolders(parent, query.User, new[] { CollectionType.tvshows });
 
-            var result = _tvSeriesManager.GetNextUp(
+            var result = _nextUpService.GetNextUpAsync(
                 new NextUpQuery
                 {
                     Limit = query.Limit,
                     StartIndex = query.StartIndex,
                     User = query.User
                 },
-                parentFolders,
-                query.DtoOptions);
+                query.DtoOptions,
+                CancellationToken.None,
+                parentFolders: parentFolders).GetAwaiter().GetResult();
 
             return result;
         }

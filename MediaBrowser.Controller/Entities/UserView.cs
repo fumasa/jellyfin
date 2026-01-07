@@ -38,6 +38,8 @@ namespace MediaBrowser.Controller.Entities
 
         public static ITVSeriesManager TVSeriesManager { get; set; }
 
+        public static INextUpService NextUpService { get; set; }
+
         /// <summary>
         /// Gets or sets the view type.
         /// </summary>
@@ -106,7 +108,7 @@ namespace MediaBrowser.Controller.Entities
                 parent = LibraryManager.GetItemById(ParentId) as Folder ?? parent;
             }
 
-            return new UserViewBuilder(UserViewManager, LibraryManager, Logger, UserDataManager, TVSeriesManager)
+            return new UserViewBuilder(UserViewManager, LibraryManager, Logger, UserDataManager, NextUpService)
                 .GetUserItems(parent, this, CollectionType, query);
         }
 

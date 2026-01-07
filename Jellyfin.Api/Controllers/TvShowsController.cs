@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Threading.Tasks;
 using Jellyfin.Api.Attributes;
 using Jellyfin.Api.Extensions;
 using Jellyfin.Api.Helpers;
@@ -33,7 +34,7 @@ public class TvShowsController : BaseJellyfinApiController
     private readonly IUserManager _userManager;
     private readonly ILibraryManager _libraryManager;
     private readonly IDtoService _dtoService;
-    private readonly ITVSeriesManager _tvSeriesManager;
+    private readonly INextUpService _nextUpService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TvShowsController"/> class.
@@ -41,17 +42,17 @@ public class TvShowsController : BaseJellyfinApiController
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="dtoService">Instance of the <see cref="IDtoService"/> interface.</param>
-    /// <param name="tvSeriesManager">Instance of the <see cref="ITVSeriesManager"/> interface.</param>
+    /// <param name="nextUpService">Instance of the <see cref="INextUpService"/> interface.</param>
     public TvShowsController(
         IUserManager userManager,
         ILibraryManager libraryManager,
         IDtoService dtoService,
-        ITVSeriesManager tvSeriesManager)
+        INextUpService nextUpService)
     {
         _userManager = userManager;
         _libraryManager = libraryManager;
         _dtoService = dtoService;
-        _tvSeriesManager = tvSeriesManager;
+        _nextUpService = nextUpService;
     }
 
     /// <summary>
@@ -75,7 +76,7 @@ public class TvShowsController : BaseJellyfinApiController
     /// <returns>A <see cref="QueryResult{BaseItemDto}"/> with the next up episodes.</returns>
     [HttpGet("NextUp")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult<QueryResult<BaseItemDto>> GetNextUp(
+    public async Task<ActionResult<QueryResult<BaseItemDto>>> GetNextUp(
         [FromQuery] Guid? userId,
         [FromQuery] int? startIndex,
         [FromQuery] int? limit,
@@ -101,7 +102,7 @@ public class TvShowsController : BaseJellyfinApiController
         var options = new DtoOptions { Fields = fields }
             .AddAdditionalDtoOptions(enableImages, enableUserData, imageTypeLimit, enableImageTypes);
 
-        var result = _tvSeriesManager.GetNextUp(
+        var result = await _nextUpService.GetNextUpAsync(
             new NextUpQuery
             {
                 Limit = limit,
@@ -114,7 +115,8 @@ public class TvShowsController : BaseJellyfinApiController
                 EnableResumable = enableResumable,
                 EnableRewatching = enableRewatching
             },
-            options);
+            options,
+            HttpContext.RequestAborted).ConfigureAwait(false);
 
         var returnItems = _dtoService.GetBaseItemDtos(result.Items, options, user);
 

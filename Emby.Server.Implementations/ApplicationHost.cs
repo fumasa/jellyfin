@@ -538,6 +538,8 @@ namespace Emby.Server.Implementations
             serviceCollection.AddSingleton<IImageProcessor, ImageProcessor>();
 
             serviceCollection.AddSingleton<ITVSeriesManager, TVSeriesManager>();
+            serviceCollection.AddSingleton<INextUpProvider, TvNextUpProvider>();
+            serviceCollection.AddSingleton<INextUpService, NextUpService>();
 
             serviceCollection.AddSingleton<IMediaSourceManager, MediaSourceManager>();
 
@@ -655,6 +657,7 @@ namespace Emby.Server.Implementations
             Folder.LimitedConcurrencyLibraryScheduler = Resolve<ILimitedConcurrencyLibraryScheduler>();
             Episode.MediaEncoder = Resolve<IMediaEncoder>();
             UserView.TVSeriesManager = Resolve<ITVSeriesManager>();
+            UserView.NextUpService = Resolve<INextUpService>();
             Video.RecordingsManager = Resolve<IRecordingsManager>();
         }
 
