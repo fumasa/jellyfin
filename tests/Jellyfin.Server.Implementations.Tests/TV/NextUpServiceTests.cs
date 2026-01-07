@@ -24,7 +24,7 @@ namespace Jellyfin.Server.Implementations.Tests.TV
 
             var service = new NextUpService(new INextUpProvider[] { lowProvider, highProvider });
 
-            var result = await service.GetNextUpAsync(query, options, CancellationToken.None).ConfigureAwait(false);
+            var result = await service.GetNextUpAsync(query, options, CancellationToken.None);
 
             Assert.False(lowProvider.WasCalled);
             Assert.True(highProvider.WasCalled);
@@ -42,7 +42,7 @@ namespace Jellyfin.Server.Implementations.Tests.TV
 
             var service = new NextUpService(new INextUpProvider[] { skippedProvider, handlingProvider });
 
-            var result = await service.GetNextUpAsync(query, options, CancellationToken.None).ConfigureAwait(false);
+            var result = await service.GetNextUpAsync(query, options, CancellationToken.None);
 
             Assert.False(skippedProvider.WasCalled);
             Assert.True(handlingProvider.WasCalled);
