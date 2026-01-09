@@ -538,6 +538,7 @@ namespace Emby.Server.Implementations
             serviceCollection.AddSingleton<IImageProcessor, ImageProcessor>();
 
             serviceCollection.AddSingleton<ITVSeriesManager, TVSeriesManager>();
+            serviceCollection.AddSingleton<INextUpProvider, PlaylistNextUpProvider>();
             serviceCollection.AddSingleton<INextUpProvider, TvNextUpProvider>();
             serviceCollection.AddSingleton<INextUpService, NextUpService>();
 

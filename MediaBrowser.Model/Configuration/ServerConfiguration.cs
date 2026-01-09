@@ -279,6 +279,11 @@ public class ServerConfiguration : BaseApplicationConfiguration
     public CastReceiverApplication[] CastReceiverApplications { get; set; } = Array.Empty<CastReceiverApplication>();
 
     /// <summary>
+    /// Gets or sets the Next Up playlist options.
+    /// </summary>
+    public NextUpPlaylistOptions NextUpPlaylistOptions { get; set; } = new NextUpPlaylistOptions();
+
+    /// <summary>
     /// Gets or sets the trickplay options.
     /// </summary>
     /// <value>The trickplay options.</value>
