@@ -305,12 +305,41 @@ namespace Emby.Server.Implementations.Dto
                 LivetvManager.AddInfoToRecordingDto(item, dto, activeRecording, user);
             }
 
+            ApplyPlaylistNextUpPrefix(dto, options);
+
             if (item is Audio audio)
             {
                 dto.HasLyrics = audio.GetMediaStreams().Any(s => s.Type == MediaStreamType.Lyric);
             }
 
             return dto;
+        }
+
+        private static void ApplyPlaylistNextUpPrefix(BaseItemDto dto, DtoOptions options)
+        {
+            var playlistNameByItemId = options.PlaylistNameByItemId;
+            if (playlistNameByItemId is null
+                || !playlistNameByItemId.TryGetValue(dto.Id, out var playlistName)
+                || string.IsNullOrWhiteSpace(playlistName))
+            {
+                return;
+            }
+
+            var prefix = $"[{playlistName}] ";
+            if (!string.IsNullOrEmpty(dto.SeriesName))
+            {
+                if (!dto.SeriesName.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    dto.SeriesName = prefix + dto.SeriesName;
+                }
+
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(dto.Name) && !dto.Name.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                dto.Name = prefix + dto.Name;
+            }
         }
 
         private static void NormalizeMediaSourceContainers(BaseItemDto dto)

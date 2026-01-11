@@ -102,28 +102,28 @@ public class TvShowsController : BaseJellyfinApiController
         var options = new DtoOptions { Fields = fields }
             .AddAdditionalDtoOptions(enableImages, enableUserData, imageTypeLimit, enableImageTypes);
 
+        var nextUpQuery = new NextUpQuery
+        {
+            Limit = limit,
+            ParentId = parentId,
+            SeriesId = seriesId,
+            StartIndex = startIndex,
+            User = user,
+            EnableTotalRecordCount = enableTotalRecordCount,
+            NextUpDateCutoff = nextUpDateCutoff ?? DateTime.MinValue,
+            EnableResumable = enableResumable,
+            EnableRewatching = enableRewatching
+        };
+
         var result = await _nextUpService.GetNextUpAsync(
-            new NextUpQuery
-            {
-                Limit = limit,
-                ParentId = parentId,
-                SeriesId = seriesId,
-                StartIndex = startIndex,
-                User = user,
-                EnableTotalRecordCount = enableTotalRecordCount,
-                NextUpDateCutoff = nextUpDateCutoff ?? DateTime.MinValue,
-                EnableResumable = enableResumable,
-                EnableRewatching = enableRewatching
-            },
+            nextUpQuery,
             options,
             HttpContext.RequestAborted).ConfigureAwait(false);
-
-        var returnItems = _dtoService.GetBaseItemDtos(result.Items, options, user);
 
         return new QueryResult<BaseItemDto>(
             startIndex,
             result.TotalRecordCount,
-            returnItems);
+            _dtoService.GetBaseItemDtos(result.Items, options, user));
     }
 
     /// <summary>

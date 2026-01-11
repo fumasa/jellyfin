@@ -70,13 +70,16 @@ namespace Emby.Server.Implementations.TV
             cancellationToken.ThrowIfCancellationRequested();
 
             var playlistOptions = _configurationManager.Configuration.NextUpPlaylistOptions;
-            var playlistItems = GetPlaylistNextUpItems(query, parentFolders, playlistOptions, cancellationToken);
+            var hidePlaylistItemsFromNextUp = playlistOptions.HidePlaylistItemsFromNextUp
+                || playlistOptions.Mode == NextUpPlaylistMode.Replace;
+            var playlistItemIds = hidePlaylistItemsFromNextUp ? new HashSet<Guid>() : null;
+            var playlistItems = GetPlaylistNextUpItems(query, parentFolders, playlistOptions, cancellationToken, playlistItemIds, options);
 
-            IReadOnlyList<BaseItem> tvItems = Array.Empty<BaseItem>();
-            if (playlistOptions.Mode == NextUpPlaylistMode.Add)
+            var tvQuery = CloneQueryWithoutPaging(query);
+            var tvItems = GetTvNextUp(tvQuery, parentFolders, options).Items;
+            if (playlistItemIds is { Count: > 0 })
             {
-                var tvQuery = CloneQueryWithoutPaging(query);
-                tvItems = GetTvNextUp(tvQuery, parentFolders, options).Items;
+                tvItems = tvItems.Where(item => !playlistItemIds.Contains(item.Id)).ToArray();
             }
 
             var combined = MergeItems(tvItems, playlistItems);
@@ -90,7 +93,9 @@ namespace Emby.Server.Implementations.TV
             NextUpQuery query,
             IReadOnlyCollection<BaseItem>? parentFolders,
             NextUpPlaylistOptions playlistOptions,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            ISet<Guid>? playlistItemIds,
+            DtoOptions options)
         {
             var playlists = GetPlaylists(query.User, playlistOptions);
             if (playlists.Count == 0)
@@ -118,6 +123,14 @@ namespace Emby.Server.Implementations.TV
                     continue;
                 }
 
+                if (playlistItemIds is not null)
+                {
+                    foreach (var item in filteredItems)
+                    {
+                        playlistItemIds.Add(item.Id);
+                    }
+                }
+
                 var orderSettings = GetPlaylistOrderSettings(playlistOptions, playlist.Id);
                 var orderedItems = OrderPlaylistItems(filteredItems, query.User, orderSettings);
                 var nextUp = GetNextUpFromPlaylist(orderedItems, item => _userDataManager.GetUserData(query.User, item), query);
@@ -126,12 +139,31 @@ namespace Emby.Server.Implementations.TV
                     continue;
                 }
 
-                results.Add(new PlaylistNextUpCandidate(nextUp.Item, nextUp.LastPlayedDate, playlistOrder));
+                results.Add(new PlaylistNextUpCandidate(nextUp.Item, nextUp.LastPlayedDate, playlistOrder, playlist.Name));
             }
 
-            return results
+            var orderedCandidates = results
                 .OrderByDescending(candidate => candidate.LastPlayedDate)
                 .ThenBy(candidate => candidate.PlaylistOrder)
+                .ToArray();
+
+            if (orderedCandidates.Length > 0)
+            {
+                options.PlaylistNameByItemId ??= new Dictionary<Guid, string>();
+                var playlistNameByItemId = options.PlaylistNameByItemId;
+                if (playlistNameByItemId is not null)
+                {
+                    foreach (var candidate in orderedCandidates)
+                    {
+                        if (!string.IsNullOrWhiteSpace(candidate.PlaylistName))
+                        {
+                            playlistNameByItemId.TryAdd(candidate.Item.Id, candidate.PlaylistName);
+                        }
+                    }
+                }
+            }
+
+            return orderedCandidates
                 .Select(candidate => candidate.Item)
                 .ToArray();
         }
@@ -388,6 +420,6 @@ namespace Emby.Server.Implementations.TV
 
         internal sealed record PlaylistNextUpResult(BaseItem Item, DateTime LastPlayedDate);
 
-        private sealed record PlaylistNextUpCandidate(BaseItem Item, DateTime LastPlayedDate, int PlaylistOrder);
+        private sealed record PlaylistNextUpCandidate(BaseItem Item, DateTime LastPlayedDate, int PlaylistOrder, string PlaylistName);
     }
 }

@@ -52,6 +52,8 @@ namespace MediaBrowser.Controller.Dto
 
         public bool AddCurrentProgram { get; set; }
 
+        public Dictionary<Guid, string>? PlaylistNameByItemId { get; set; }
+
         public bool ContainsField(ItemFields field)
             => Fields.Contains(field);
 

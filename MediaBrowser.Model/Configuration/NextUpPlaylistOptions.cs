@@ -10,6 +10,8 @@ public class NextUpPlaylistOptions
 {
     public NextUpPlaylistMode Mode { get; set; } = NextUpPlaylistMode.Add;
 
+    public bool HidePlaylistItemsFromNextUp { get; set; } = false;
+
     public bool UseAllPlaylists { get; set; } = false;
 
     public Guid[] PlaylistIds { get; set; } = Array.Empty<Guid>();
